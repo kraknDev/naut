@@ -1,0 +1,6 @@
+/.log/
+/server/.log/
+/web/.log/
+/server/yarn-error.log
+/server/node_modules
+/web/node_modules
