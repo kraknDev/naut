@@ -1,5 +1,6 @@
 import { Max, Min } from "class-validator";
 import { Context } from "./resolver.types"
+import { hash } from "argon2"
 import {
     Arg,
     Args,
@@ -29,7 +30,7 @@ class newUserData {
     @Min(8)
     @Max(40)
     @Field()
-    password!: string
+    password: string
 
 }
 
@@ -44,12 +45,15 @@ class User {
     @Field()
     userName: string
 
+    @Field()
+    hashedPassword: string
+
 }
 
 @Resolver(User)
 export class UserResolver {
 
-    @Query(() => User)
+    @Query(() => User, { nullable: true })
     async queryUser(@Arg("id") id: number,
         @Ctx() { prisma }: Context):
         Promise<User | null> {
@@ -76,7 +80,7 @@ export class UserResolver {
                 data: {
                     userName,
                     email,
-                    password
+                    hashedPassword: await hash(password)
                 }
             })
             return true

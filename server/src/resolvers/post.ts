@@ -22,15 +22,22 @@ class newThoughtData {
     text!: string
 
     @Field()
-    id!: number
+    ownerId: number
+}
 
-    @Field()
-    idPost: number
+@ArgsType()
+class updateThoughtData {
 
     @Field()
     @Min(1)
     @Max(200)
-    updateText!: string
+    text!: string
+
+    @Field()
+    idThought: number
+
+    @Field()
+    ownerId: number
 }
 
 @ObjectType()
@@ -49,19 +56,19 @@ class Thought {
 export class ThoughtResolver {
 
     @Mutation(() => Boolean, { nullable: true })
-    async UpdateThought(@Args() { idPost, text, id }: newThoughtData,
+    async UpdateThought(@Args() { ownerId, idThought, text}: updateThoughtData,
         @Ctx() { prisma }: Context):
         Promise<Boolean | null> {
         try {
             await prisma.user.update({
                 where: {
-                    id
+                    id: ownerId
                 },
                 data: {
                     thoughts: {
                         update: {
                             where: {
-                                id: idPost
+                                id: idThought
                             },
                             data: {
                                 text: text
@@ -70,8 +77,8 @@ export class ThoughtResolver {
 
                     }
                 }
-            },
             })
+
         return true
     } catch(error) {
         console.error(error)
@@ -81,7 +88,7 @@ export class ThoughtResolver {
 
 @Query(() => [Thought], { nullable: true })
 async queryManyThoughts(@Ctx() { prisma }: Context):
-Promise < Thought[] | null > {
+Promise < Thought[] | null> {
     try {
         const thought = await prisma.thought.findMany({
             take: 10
@@ -111,13 +118,13 @@ Promise < Thought | null > {
 }
 
 @Mutation(() => Boolean, { nullable: true })
-async addThought(@Args() { text, id }: newThoughtData,
+async addThought(@Args() { text, ownerId }: newThoughtData,
         @Ctx() { prisma }: Context):
 Promise < Boolean | null > {
     try {
         await prisma.user.update({
             where: {
-                id
+                id: ownerId
             },
             data: {
                 thoughts: {
