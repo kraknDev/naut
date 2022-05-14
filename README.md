@@ -12,8 +12,5 @@ the source code could be rewritten at ANYTIME, there will be breaking changes !!
 One of the most interesting parts is that naut somehow feels alive.  
 all theming decisions made it's own personality (and i think is fun to watch)
 
-anyone can add their own versions of naut that other users can see in loading screens and other menus.  
-consider submiting your art in a pull request :)
-
 ## In Progress
 There is plenty to do, so lil me will be greatful if ol' you pull request anything smileyface.
