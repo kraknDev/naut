@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/thought.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cross_file_image/cross_file_image.dart';
+import '../providers/card.dart';
 
 final ImagePicker _picker = ImagePicker();
-final imageProvider = FutureProvider<XFile?>((ref) async {
-  final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-  return image;
-});
 
 class HomePage extends ConsumerWidget {
   HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final _thoughtFormKey = GlobalKey<FormState>();
-    final _thoughtFormController = TextEditingController();
+    final _cardFormKey = GlobalKey<FormState>();
+    final _cardFormController = TextEditingController();
     AsyncValue<XFile?> imageSelected = ref.watch(imageProvider);
+
 //////////////////////////////////
 //////////////////////////////////
 //////////////////////////////////
 //////////////////////////////////
-    thoughtDialogContent() {
+    cardDialogContent() {
       return Form(
-          key: _thoughtFormKey,
+          key: _cardFormKey,
           child: TextFormField(
-            controller: _thoughtFormController,
+            controller: _cardFormController,
             keyboardType: TextInputType.multiline,
             validator: (text) {
               if (text == null || text.isEmpty) {
@@ -38,61 +35,63 @@ class HomePage extends ConsumerWidget {
               return null;
             },
             maxLines: 9,
-            style: const TextStyle(height: 1, fontSize: 15),
+            style: const TextStyle(height: 1, fontSize: 17),
             decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'What you want to share this time?'),
           ));
     }
 
-    thoughtDialog() {
+    cardDialog() {
       showDialog(
           context: context,
           builder: (BuildContext context) {
-            return AlertDialog(
-              content: thoughtDialogContent(),
-              actions: [
-                imageSelected.when(
-                    data: (image) {
-                      return Container(
-                          padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
-                          height: 40,
-                          width: 40,
-                          child: CircleAvatar(
-                            backgroundImage:
-                                Image(image: XFileImage(image!)).image,
-                            radius: 100,
-                          ));
-                    },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (err, _) => Text('error ${err}')),
-                IconButton(
-                  onPressed: () {
-                    ref.refresh(imageProvider);
-                  },
-                  icon: Icon(Icons.attach_file),
-                ),
-                TextButton(
-                    child: const Text('Share'),
-                    onPressed: () {
-                      imageSelected.when(
-                          data: (image) {
-                            if (_thoughtFormKey.currentState!.validate()) {
-                              ref.read(thoughtProvider.notifier).addThought(
-                                  _thoughtFormController.text, image);
-                              _thoughtFormController.clear();
-                              Navigator.pop(context, _thoughtFormController);
-                            }
+            return Dialog(
+                child: SizedBox(
+                    width: 200,
+                    height: 400,
+                    child: Column(
+                      children: [
+                        cardDialogContent(),
+                        imageSelected.when(
+                            data: (image) {
+                              return Container(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 0, 4, 0),
+                                  height: 100,
+                                  child: Image(image: XFileImage(image!)));
+                            },
+                            loading: () => const CircularProgressIndicator(),
+                            error: (err, _) => Text('error ${err}')),
+                        IconButton(
+                          onPressed: () {
+                            ref.refresh(imageProvider);
                           },
-                          loading: () => const CircularProgressIndicator(),
-                          error: (err, _) => Text('error ${err}'));
-                    })
-              ],
-            );
+                          icon: Icon(Icons.attach_file),
+                        ),
+                        TextButton(
+                            child: const Text('Share'),
+                            onPressed: () {
+                              imageSelected.when(
+                                  data: (image) {
+                                    if (_cardFormKey.currentState!.validate()) {
+                                      ref.read(cardProvider.notifier).addCard(
+                                          _cardFormController.text, image!);
+                                      _cardFormController.clear();
+                                      Navigator.pop(
+                                          context, _cardFormController);
+                                    }
+                                  },
+                                  loading: () =>
+                                      const CircularProgressIndicator(),
+                                  error: (err, _) => Text('error ${err}'));
+                            })
+                      ],
+                    )));
           });
     }
 
-    final thoughts = ref.watch(thoughtProvider);
+    final cards = ref.watch(cardProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text("naut"),
@@ -100,7 +99,7 @@ class HomePage extends ConsumerWidget {
           Center(
               child: IconButton(
                   onPressed: () {
-                    thoughtDialog();
+                    cardDialog();
                   },
                   icon: const Icon(
                     Icons.face,
@@ -108,9 +107,9 @@ class HomePage extends ConsumerWidget {
         ],
       ),
       body: ListView.builder(
-          itemCount: thoughts.length,
+          itemCount: cards.length,
           itemBuilder: (context, index) {
-            index = thoughts.length - 1 - index;
+            index = cards.length - 1 - index;
             return Dismissible(
                 confirmDismiss: (DismissDirection direction) async {
                   if (direction == DismissDirection.startToEnd) {
@@ -130,15 +129,13 @@ class HomePage extends ConsumerWidget {
                   alignment: Alignment.topRight,
                   color: Colors.red,
                 ),
-                key: Key(thoughts[index].id),
+                key: Key(cards[index].id),
                 dismissThresholds: const {
                   DismissDirection.startToEnd: 0.3,
                   DismissDirection.endToStart: 0.5
                 },
                 onDismissed: (DismissDirection direction) {
-                  ref
-                      .read(thoughtProvider.notifier)
-                      .removeThought(thoughts[index].id);
+                  ref.read(cardProvider.notifier).removeCard(cards[index].id);
                 },
                 child: InkWell(
                   child: Container(
@@ -164,7 +161,7 @@ class HomePage extends ConsumerWidget {
                                   padding:
                                       const EdgeInsets.fromLTRB(0, 5, 40, 0),
                                   child: Text(
-                                    thoughts[index].text.toString(),
+                                    cards[index].text.toString(),
                                     style: const TextStyle(
                                       fontSize: 18,
                                     ),
@@ -173,10 +170,10 @@ class HomePage extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          if (thoughts[index].image != null)
+                          if (cards[index].image != null)
                             SizedBox(
                                 child: Image(
-                                    image: XFileImage(thoughts[index].image!)))
+                                    image: XFileImage(cards[index].image!)))
                         ],
                       )),
                   onTap: null,
